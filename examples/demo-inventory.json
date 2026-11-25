@@ -1,0 +1,410 @@
+{
+  "format": "secret-reach/inventory@1",
+  "generated_at": "2026-11-25T12:00:00Z",
+  "account": "111122223333",
+  "partition": "aws",
+  "regions": [
+    "eu-west-1",
+    "us-east-1"
+  ],
+  "iam": {
+    "UserDetailList": [],
+    "GroupDetailList": [],
+    "RoleDetailList": [
+      {
+        "RoleName": "vendor-x-integration",
+        "Path": "/integrations/",
+        "Arn": "arn:aws:iam::111122223333:role/integrations/vendor-x-integration",
+        "RolePolicyList": [
+          {
+            "PolicyName": "vendor-x-read",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "ReadAppConfig",
+                  "Effect": "Allow",
+                  "Action": [
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:ListSecrets"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "AppParams",
+                  "Effect": "Allow",
+                  "Action": "ssm:GetParameter*",
+                  "Resource": "arn:aws:ssm:*:111122223333:parameter/app/*"
+                },
+                {
+                  "Sid": "Inspect",
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:List*",
+                    "ecs:Describe*",
+                    "ec2:Describe*",
+                    "codebuild:BatchGetProjects"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "State",
+                  "Effect": "Allow",
+                  "Action": "s3:GetObject",
+                  "Resource": "arn:aws:s3:::acme-terraform-state/*"
+                },
+                {
+                  "Sid": "DecryptViaServices",
+                  "Effect": "Allow",
+                  "Action": "kms:Decrypt",
+                  "Resource": "*",
+                  "Condition": {
+                    "StringLike": {
+                      "kms:ViaService": [
+                        "secretsmanager.*.amazonaws.com",
+                        "ssm.*.amazonaws.com"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "Sid": "NeverRootCreds",
+                  "Effect": "Deny",
+                  "Action": "secretsmanager:GetSecretValue",
+                  "Resource": "arn:aws:secretsmanager:*:111122223333:secret:prod/root-*"
+                }
+              ]
+            }
+          }
+        ],
+        "AttachedManagedPolicies": [],
+        "PermissionsBoundary": {
+          "PermissionsBoundaryType": "Policy",
+          "PermissionsBoundaryArn": "arn:aws:iam::111122223333:policy/integration-boundary"
+        }
+      },
+      {
+        "RoleName": "db-admin",
+        "Path": "/",
+        "Arn": "arn:aws:iam::111122223333:role/db-admin",
+        "RolePolicyList": [
+          {
+            "PolicyName": "admin",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "*",
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ],
+        "AttachedManagedPolicies": []
+      }
+    ],
+    "Policies": [
+      {
+        "PolicyName": "integration-boundary",
+        "Arn": "arn:aws:iam::111122223333:policy/integration-boundary",
+        "PolicyVersionList": [
+          {
+            "VersionId": "v1",
+            "IsDefaultVersion": true,
+            "Document": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "NotAction": [
+                    "codebuild:*",
+                    "iam:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "kms_keys": {
+    "arn:aws:kms:us-east-1:111122223333:key/1111aaaa-2222-bbbb-3333-cccc4444dddd": {
+      "manager": "CUSTOMER",
+      "aliases": [
+        "alias/prod-db"
+      ],
+      "policy": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "KeyAdmins",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "arn:aws:iam::111122223333:role/db-admin"
+            },
+            "Action": "kms:*",
+            "Resource": "*"
+          }
+        ]
+      }
+    },
+    "arn:aws:kms:eu-west-1:111122223333:key/5555eeee-6666-ffff-7777-000088889999": {
+      "manager": "CUSTOMER",
+      "aliases": [
+        "alias/partner"
+      ],
+      "policy": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "EnableIAM",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "arn:aws:iam::111122223333:root"
+            },
+            "Action": "kms:*",
+            "Resource": "*"
+          }
+        ]
+      }
+    },
+    "arn:aws:kms:us-east-1:111122223333:key/9999aaaa-8888-bbbb-7777-cccc66665555": {
+      "manager": "CUSTOMER",
+      "aliases": [
+        "alias/backups"
+      ],
+      "policy": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "EnableIAM",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "arn:aws:iam::111122223333:root"
+            },
+            "Action": "kms:*",
+            "Resource": "*"
+          },
+          {
+            "Sid": "OnlyBackupRole",
+            "Effect": "Deny",
+            "NotPrincipal": {
+              "AWS": "arn:aws:iam::111122223333:role/db-admin"
+            },
+            "Action": "kms:Decrypt",
+            "Resource": "*"
+          }
+        ]
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "secretsmanager-secret",
+      "arn": "arn:aws:secretsmanager:us-east-1:111122223333:secret:prod/payments/stripe-api-key-a1B2c3",
+      "name": "prod/payments/stripe-api-key",
+      "region": "us-east-1",
+      "kms_key": null,
+      "resource_policy": null,
+      "tags": {
+        "owner": "payments"
+      },
+      "details": {}
+    },
+    {
+      "type": "secretsmanager-secret",
+      "arn": "arn:aws:secretsmanager:us-east-1:111122223333:secret:prod/db/master-d4E5f6",
+      "name": "prod/db/master",
+      "region": "us-east-1",
+      "kms_key": "arn:aws:kms:us-east-1:111122223333:key/1111aaaa-2222-bbbb-3333-cccc4444dddd",
+      "resource_policy": null,
+      "tags": {
+        "owner": "data"
+      },
+      "details": {}
+    },
+    {
+      "type": "secretsmanager-secret",
+      "arn": "arn:aws:secretsmanager:us-east-1:111122223333:secret:prod/root-credentials-g7H8i9",
+      "name": "prod/root-credentials",
+      "region": "us-east-1",
+      "kms_key": null,
+      "resource_policy": null,
+      "tags": {
+        "owner": "platform"
+      },
+      "details": {}
+    },
+    {
+      "type": "secretsmanager-secret",
+      "arn": "arn:aws:secretsmanager:eu-west-1:111122223333:secret:partner/acme-sftp-j1K2l3",
+      "name": "partner/acme-sftp",
+      "region": "eu-west-1",
+      "kms_key": "arn:aws:kms:eu-west-1:111122223333:key/5555eeee-6666-ffff-7777-000088889999",
+      "resource_policy": null,
+      "tags": {
+        "owner": "partnerships"
+      },
+      "details": {}
+    },
+    {
+      "type": "ssm-parameter",
+      "arn": "arn:aws:ssm:us-east-1:111122223333:parameter/app/prod/db-password",
+      "name": "/app/prod/db-password",
+      "region": "us-east-1",
+      "kms_key": null,
+      "resource_policy": null,
+      "tags": {
+        "owner": "payments"
+      },
+      "details": {
+        "parameter_type": "SecureString"
+      }
+    },
+    {
+      "type": "ssm-parameter",
+      "arn": "arn:aws:ssm:us-east-1:111122223333:parameter/app/prod/slack-webhook-url",
+      "name": "/app/prod/slack-webhook-url",
+      "region": "us-east-1",
+      "kms_key": null,
+      "resource_policy": null,
+      "tags": {
+        "owner": "platform"
+      },
+      "details": {
+        "parameter_type": "String"
+      }
+    },
+    {
+      "type": "ssm-parameter",
+      "arn": "arn:aws:ssm:us-east-1:111122223333:parameter/infra/vpn-psk",
+      "name": "/infra/vpn-psk",
+      "region": "us-east-1",
+      "kms_key": null,
+      "resource_policy": null,
+      "tags": {
+        "owner": "platform"
+      },
+      "details": {
+        "parameter_type": "SecureString"
+      }
+    },
+    {
+      "type": "lambda-env",
+      "arn": "arn:aws:lambda:us-east-1:111122223333:function:billing-webhook",
+      "name": "billing-webhook",
+      "region": "us-east-1",
+      "kms_key": null,
+      "resource_policy": null,
+      "tags": {
+        "owner": "payments"
+      },
+      "details": {
+        "env_names": [
+          "DB_URL",
+          "STRIPE_SECRET",
+          "LOG_LEVEL"
+        ]
+      }
+    },
+    {
+      "type": "ecs-task-definition",
+      "arn": "arn:aws:ecs:eu-west-1:111122223333:task-definition/api-service:42",
+      "name": "api-service",
+      "region": "eu-west-1",
+      "kms_key": null,
+      "resource_policy": null,
+      "tags": {
+        "team": "api"
+      },
+      "details": {
+        "plaintext_env": [
+          "app/DATABASE_URL",
+          "app/SENTRY_DSN"
+        ],
+        "secret_refs": [
+          "app/JWT_SIGNING_KEY"
+        ],
+        "secret_ref_arns": [
+          "arn:aws:secretsmanager:eu-west-1:111122223333:secret:api/jwt-m4N5o6"
+        ]
+      }
+    },
+    {
+      "type": "codebuild-env",
+      "arn": "arn:aws:codebuild:us-east-1:111122223333:project/deploy-prod",
+      "name": "deploy-prod",
+      "region": "us-east-1",
+      "kms_key": null,
+      "resource_policy": null,
+      "tags": {
+        "owner": "platform"
+      },
+      "details": {
+        "plaintext_env": [
+          "NPM_TOKEN"
+        ],
+        "secret_refs": []
+      }
+    },
+    {
+      "type": "s3-bucket",
+      "arn": "arn:aws:s3:::acme-terraform-state",
+      "name": "acme-terraform-state",
+      "region": "us-east-1",
+      "kms_key": null,
+      "resource_policy": null,
+      "tags": {
+        "owner": "platform"
+      },
+      "details": {
+        "matched": "terraform"
+      }
+    },
+    {
+      "type": "s3-bucket",
+      "arn": "arn:aws:s3:::acme-db-backups",
+      "name": "acme-db-backups",
+      "region": "us-east-1",
+      "kms_key": "arn:aws:kms:us-east-1:111122223333:key/9999aaaa-8888-bbbb-7777-cccc66665555",
+      "resource_policy": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "VendorRestoreTests",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "arn:aws:iam::111122223333:role/integrations/vendor-x-integration"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::acme-db-backups/*"
+          }
+        ]
+      },
+      "tags": {
+        "owner": "data"
+      },
+      "details": {
+        "matched": "backup"
+      }
+    },
+    {
+      "type": "ec2-user-data",
+      "arn": "arn:aws:ec2:us-east-1:111122223333:instance/i-0123456789abcdef0",
+      "name": "i-0123456789abcdef0 (bastion)",
+      "region": "us-east-1",
+      "kms_key": null,
+      "resource_policy": null,
+      "tags": {
+        "Name": "bastion",
+        "owner": "platform"
+      },
+      "details": {}
+    }
+  ],
+  "errors": []
+}
