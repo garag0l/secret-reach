@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "secret-reach"
+dynamic = ["version"]
+description = "Incident response: list every secret a compromised AWS principal could read (Secrets Manager, SSM, Lambda env, ECS, CodeBuild, S3 state/backups, EC2 user data) as a rotation checklist, without ever reading a secret value."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Murat Bekgi" }]
+keywords = ["aws", "incident-response", "iam", "secrets", "secrets-manager", "ssm", "kms", "security", "cloud-security", "blast-radius"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "Programming Language :: Python :: 3",
+  "Topic :: Security",
+]
+dependencies = []
+
+[project.optional-dependencies]
+live = ["boto3>=1.40"]
+dev = ["pytest>=8", "ruff>=0.6", "boto3>=1.40", "moto[ec2,s3,iam,sts,kms,secretsmanager,ssm,awslambda,ecs]>=5.0"]
+
+[project.urls]
+Homepage = "https://github.com/garag0l/secret-reach"
+Issues = "https://github.com/garag0l/secret-reach/issues"
+Changelog = "https://github.com/garag0l/secret-reach/blob/main/CHANGELOG.md"
+
+[project.scripts]
+secret-reach = "secret_reach.cli:main"
+
+[tool.hatch.version]
+path = "src/secret_reach/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/secret_reach"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
